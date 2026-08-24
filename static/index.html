@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Remote Chat</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+</head>
+
+<body>
+
+<main class="app">
+
+    <!-- HEADER -->
+
+    <header class="topbar">
+
+        <div>
+
+            <h1>
+                Ollama Chat
+            </h1>
+
+            <p
+                id="status"
+                class="status"
+            >
+                Connecting...
+            </p>
+
+        </div>
+
+        <div class="model-container">
+
+            <label for="model">
+                Model
+            </label>
+
+            <select id="model">
+                <option>
+                    Loading models...
+                </option>
+            </select>
+
+        </div>
+
+    </header>
+
+
+    <!-- CHAT -->
+
+    <section
+        id="chat"
+        class="chat"
+    >
+
+        <div class="welcome">
+
+            <div class="welcome-icon">
+                ✦
+            </div>
+
+            <h2>
+                Remote AI Assistant
+            </h2>
+
+            <p>
+                Send a message or attach an image.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- IMAGE PREVIEW -->
+
+    <section
+        id="attachment"
+        class="attachment hidden"
+    >
+
+        <img
+            id="preview"
+            alt="Selected image"
+        >
+
+        <div class="attachment-info">
+
+            <strong id="filename"></strong>
+
+            <button
+                id="remove-image"
+                type="button"
+            >
+                Remove
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- COMPOSER -->
+
+    <form
+        id="composer"
+        class="composer"
+    >
+
+        <input
+            id="image-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            hidden
+        >
+
+        <button
+            id="attach-button"
+            class="icon-button"
+            type="button"
+            title="Attach image"
+        >
+            +
+        </button>
+
+        <textarea
+            id="prompt"
+            rows="1"
+            placeholder="Message your model..."
+        ></textarea>
+
+        <button
+            id="send-button"
+            class="send-button"
+            type="submit"
+        >
+            Send
+        </button>
+
+    </form>
+
+
+    <!-- FOOTER -->
+
+    <footer>
+
+        <span>
+            Ollama via Tailscale
+        </span>
+
+        <span>
+            •
+        </span>
+
+        <span>
+            Remote inference
+        </span>
+
+    </footer>
+
+</main>
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>

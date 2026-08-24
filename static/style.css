@@ -1,0 +1,553 @@
+:root {
+    color-scheme: dark;
+
+    --background: #0b0d10;
+    --panel: #12161b;
+    --panel-light: #181d23;
+
+    --border: #2a3038;
+
+    --text: #edf1f5;
+    --muted: #8d97a5;
+
+    --accent: #7aa7ff;
+
+    --user-message: #202a38;
+    --assistant-message: #151a20;
+
+    --danger: #ff7777;
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+    margin: 0;
+
+    min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at top,
+            #171c25 0,
+            var(--background) 45%
+        );
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+
+.app {
+    width: min(1000px, 100%);
+
+    min-height: 100vh;
+
+    margin: auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding: 24px;
+}
+
+
+/* HEADER */
+
+.topbar {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding-bottom: 18px;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+
+h1 {
+    margin: 0;
+
+    font-size: 22px;
+}
+
+
+.status {
+    margin: 5px 0 0;
+
+    font-size: 13px;
+
+    color: var(--muted);
+}
+
+
+.status.ok {
+    color: #8fd7a7;
+}
+
+
+.status.error {
+    color: var(--danger);
+}
+
+
+/* MODEL */
+
+.model-container {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    min-width: 320px;
+}
+
+
+.model-container label {
+    font-size: 12px;
+
+    color: var(--muted);
+}
+
+
+select {
+    width: 100%;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 10px;
+
+    background:
+        var(--panel-light);
+
+    color: var(--text);
+}
+
+
+/* CHAT */
+
+.chat {
+    flex: 1;
+
+    padding: 24px 0;
+
+    overflow-y: auto;
+}
+
+
+.welcome {
+    min-height: 52vh;
+
+    display: grid;
+
+    place-content: center;
+
+    justify-items: center;
+
+    text-align: center;
+
+    color: var(--muted);
+}
+
+
+.welcome-icon {
+    width: 54px;
+    height: 54px;
+
+    display: grid;
+
+    place-items: center;
+
+    margin-bottom: 14px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 16px;
+
+    background: var(--panel);
+
+    color: var(--accent);
+
+    font-size: 25px;
+}
+
+
+.welcome h2 {
+    margin: 0;
+
+    color: var(--text);
+
+    font-size: 24px;
+}
+
+
+.welcome p {
+    margin-top: 8px;
+}
+
+
+/* MESSAGES */
+
+.message {
+    display: flex;
+
+    margin: 14px 0;
+}
+
+
+.message.user {
+    justify-content: flex-end;
+}
+
+
+.bubble {
+    max-width:
+        min(78%, 760px);
+
+    padding: 13px 16px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 16px;
+
+    white-space: pre-wrap;
+
+    line-height: 1.55;
+
+    overflow-wrap: anywhere;
+}
+
+
+.user .bubble {
+    background: var(--user-message);
+
+    border-top-right-radius: 5px;
+}
+
+
+.assistant .bubble {
+    background: var(--assistant-message);
+
+    border-top-left-radius: 5px;
+}
+
+
+.meta {
+    margin-top: 7px;
+
+    font-size: 11px;
+
+    color: var(--muted);
+}
+
+
+/* MESSAGE IMAGE */
+
+.message-image {
+    display: block;
+
+    max-width: 320px;
+
+    max-height: 280px;
+
+    margin-bottom: 10px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid var(--border);
+}
+
+
+/* COMPOSER */
+
+.composer {
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 9px;
+
+    padding: 10px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 16px;
+
+    background:
+        rgba(18, 22, 27, 0.96);
+}
+
+
+textarea {
+    flex: 1;
+
+    resize: none;
+
+    max-height: 180px;
+
+    padding: 11px 4px;
+
+    border: 0;
+
+    outline: none;
+
+    background: transparent;
+
+    color: var(--text);
+
+    font: inherit;
+
+    line-height: 1.45;
+}
+
+
+textarea::placeholder {
+    color: #687280;
+}
+
+
+/* BUTTONS */
+
+.icon-button,
+.send-button,
+#remove-image {
+    cursor: pointer;
+
+    color: var(--text);
+}
+
+
+.icon-button {
+    width: 38px;
+
+    height: 38px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 10px;
+
+    background:
+        var(--panel-light);
+
+    font-size: 23px;
+}
+
+
+.send-button {
+    height: 38px;
+
+    padding: 0 18px;
+
+    border: 0;
+
+    border-radius: 10px;
+
+    background:
+        #315f9e;
+}
+
+
+.send-button:disabled,
+.icon-button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* ATTACHMENT */
+
+.attachment {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 10px;
+
+    padding: 9px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 12px;
+
+    background:
+        var(--panel);
+}
+
+
+.attachment img {
+    width: 70px;
+
+    height: 70px;
+
+    object-fit: cover;
+
+    border-radius: 8px;
+}
+
+
+.attachment-info {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+}
+
+
+.attachment-info strong {
+    max-width: 450px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+#remove-image {
+    padding: 7px 10px;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    background: #262b32;
+}
+
+
+/* UTILITY */
+
+.hidden {
+    display: none !important;
+}
+
+
+footer {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    padding-top: 12px;
+
+    color: #687280;
+
+    font-size: 11px;
+
+    text-align: center;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+    .app {
+        padding: 14px;
+    }
+
+    .topbar {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+    .model-container {
+        width: 100%;
+
+        min-width: 0;
+    }
+
+    .bubble {
+        max-width: 90%;
+    }
+
+    footer {
+        flex-direction: column;
+
+        gap: 2px;
+    }
+}
+
+
+.bubble h1,
+.bubble h2,
+.bubble h3,
+.bubble h4 {
+    margin: 0 0 10px;
+    line-height: 1.3;
+}
+
+.bubble p {
+    margin: 0 0 10px;
+}
+
+.bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.bubble ul,
+.bubble ol {
+    margin: 8px 0 10px 22px;
+    padding: 0;
+}
+
+.bubble li {
+    margin: 4px 0;
+}
+
+.bubble strong {
+    font-weight: 700;
+}
+
+.bubble code {
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: #242a31;
+    font-family: Consolas, monospace;
+}
+
+.bubble pre {
+    overflow-x: auto;
+    padding: 12px;
+    border-radius: 10px;
+    background: #0d1014;
+}
+
+.bubble pre code {
+    padding: 0;
+    background: transparent;
+}
