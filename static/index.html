@@ -43,17 +43,63 @@
 
         </div>
 
-        <div class="model-container">
+        <div class="topbar-right">
 
-            <label for="model">
-                Model
-            </label>
+            <div class="model-container">
 
-            <select id="model">
-                <option>
-                    Loading models...
-                </option>
-            </select>
+                <label for="model">
+                    Model
+                </label>
+
+                <select id="model">
+                    <option>
+                        Loading models...
+                    </option>
+                </select>
+
+            </div>
+
+            <div class="model-container">
+
+                <label for="preset">
+                    Role
+                </label>
+
+                <select id="preset">
+                    <option value="">
+                        No role
+                    </option>
+                </select>
+
+            </div>
+
+            <div class="header-buttons">
+
+                <button
+                    id="history-button"
+                    class="ghost-button"
+                    type="button"
+                >
+                    History
+                </button>
+
+                <button
+                    id="edit-roles"
+                    class="ghost-button"
+                    type="button"
+                >
+                    Roles
+                </button>
+
+                <button
+                    id="new-chat"
+                    class="ghost-button"
+                    type="button"
+                >
+                    New chat
+                </button>
+
+            </div>
 
         </div>
 
@@ -173,6 +219,109 @@
     </footer>
 
 </main>
+
+<!-- CHAT HISTORY -->
+
+<dialog id="history-dialog">
+
+    <div class="history">
+
+        <h2>Chat history</h2>
+
+        <p id="history-empty" class="history-empty hidden">
+            No saved chats yet.
+        </p>
+
+        <ul id="history-list" class="history-list"></ul>
+
+        <div class="role-actions">
+
+            <span class="spacer"></span>
+
+            <button
+                id="history-close"
+                class="ghost-button"
+                type="button"
+            >
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</dialog>
+
+<!-- ROLE EDITOR -->
+
+<dialog id="role-dialog">
+
+    <form id="role-form" class="role-form">
+
+        <h2>Roles</h2>
+
+        <label for="role-list">Edit</label>
+        <select id="role-list"></select>
+
+        <label for="role-name">Name</label>
+        <input
+            id="role-name"
+            type="text"
+            maxlength="60"
+            placeholder="e.g. Photo describer"
+            autocomplete="off"
+        >
+
+        <label for="role-text">Role</label>
+        <textarea
+            id="role-text"
+            rows="5"
+            placeholder="Who the model should be and how it should answer."
+        ></textarea>
+
+        <label for="role-context">
+            Context <span class="optional">(optional)</span>
+        </label>
+        <textarea
+            id="role-context"
+            rows="5"
+            placeholder="Background notes, rules or facts to keep in mind."
+        ></textarea>
+
+        <p id="role-error" class="role-error hidden"></p>
+
+        <div class="role-actions">
+
+            <button
+                id="role-delete"
+                class="danger-button hidden"
+                type="button"
+            >
+                Delete
+            </button>
+
+            <span class="spacer"></span>
+
+            <button
+                id="role-close"
+                class="ghost-button"
+                type="button"
+            >
+                Close
+            </button>
+
+            <button
+                class="send-button"
+                type="submit"
+            >
+                Save
+            </button>
+
+        </div>
+
+    </form>
+
+</dialog>
 
 <script src="/static/app.js"></script>
 

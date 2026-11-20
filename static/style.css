@@ -51,7 +51,9 @@ body {
 .app {
     width: min(1000px, 100%);
 
-    min-height: 100vh;
+    /* Fixed-height shell: the chat scrolls, the composer stays visible */
+    height: 100vh;
+    height: 100dvh;
 
     margin: auto;
 
@@ -148,6 +150,8 @@ select {
 
 .chat {
     flex: 1;
+
+    min-height: 0;
 
     padding: 24px 0;
 
@@ -485,10 +489,26 @@ footer {
         flex-direction: column;
     }
 
-    .model-container {
+    .topbar-right {
         width: 100%;
 
+        flex-wrap: wrap;
+    }
+
+    .model-container {
+        flex: 1 1 140px;
+
+        width: auto;
+
         min-width: 0;
+    }
+
+    .header-buttons {
+        width: 100%;
+    }
+
+    .header-buttons .ghost-button {
+        flex: 1;
     }
 
     .bubble {
@@ -550,4 +570,337 @@ footer {
 .bubble pre code {
     padding: 0;
     background: transparent;
+}
+
+
+/* HEADER ACTIONS */
+
+.topbar-right {
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 10px;
+}
+
+.ghost-button {
+    height: 40px;
+
+    padding: 0 14px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 10px;
+
+    background: var(--panel-light);
+
+    color: var(--text);
+
+    font: inherit;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+}
+
+.ghost-button:hover {
+    border-color: var(--accent);
+}
+
+
+/* STREAMING */
+
+.assistant .content {
+    white-space: normal;
+}
+
+.assistant .content.placeholder {
+    color: var(--muted);
+}
+
+.bubble.error {
+    border-color: var(--danger);
+}
+
+.thinking {
+    margin-bottom: 10px;
+
+    padding-bottom: 10px;
+
+    border-bottom:
+        1px dashed var(--border);
+
+    color: var(--muted);
+
+    font-size: 14px;
+}
+
+.thinking summary {
+    cursor: pointer;
+
+    user-select: none;
+}
+
+.thinking-body {
+    margin-top: 8px;
+
+    white-space: pre-wrap;
+}
+
+
+/* ROLES */
+
+.topbar-right .model-container {
+    min-width: 170px;
+}
+
+.header-buttons {
+    display: flex;
+
+    gap: 10px;
+}
+
+.note {
+    margin: 14px 0;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    text-align: center;
+}
+
+dialog {
+    width: min(560px, 92vw);
+
+    max-height: 90dvh;
+
+    padding: 20px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 16px;
+
+    background: var(--panel);
+
+    color: var(--text);
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.role-form {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.role-form h2 {
+    margin: 0 0 6px;
+
+    font-size: 20px;
+}
+
+.role-form label {
+    margin-top: 8px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+.role-form .optional {
+    opacity: 0.7;
+}
+
+.role-form input,
+.role-form textarea {
+    width: 100%;
+
+    max-height: none;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 10px;
+
+    background: var(--panel-light);
+
+    color: var(--text);
+
+    font: inherit;
+
+    resize: vertical;
+}
+
+.role-error {
+    margin: 8px 0 0;
+
+    color: var(--danger);
+
+    font-size: 13px;
+}
+
+.role-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 14px;
+}
+
+.role-actions .spacer {
+    flex: 1;
+}
+
+.danger-button {
+    height: 40px;
+
+    padding: 0 14px;
+
+    border:
+        1px solid var(--danger);
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: var(--danger);
+
+    font: inherit;
+
+    font-size: 14px;
+
+    cursor: pointer;
+}
+
+
+/* CHAT HISTORY */
+
+.history h2 {
+    margin: 0 0 12px;
+
+    font-size: 20px;
+}
+
+.history-empty {
+    margin: 0 0 12px;
+
+    color: var(--muted);
+}
+
+.history-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+
+    max-height: 55dvh;
+
+    margin: 0;
+
+    padding: 0;
+
+    overflow-y: auto;
+
+    list-style: none;
+}
+
+.history-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 10px;
+
+    background: var(--panel-light);
+}
+
+.history-item.active {
+    border-color: var(--accent);
+}
+
+.history-open {
+    display: flex;
+
+    flex: 1;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 2px;
+
+    min-width: 0;
+
+    padding: 10px 12px;
+
+    border: 0;
+
+    background: none;
+
+    color: var(--text);
+
+    font: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.history-title {
+    max-width: 100%;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.history-meta {
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+.icon-button {
+    width: 36px;
+
+    height: 36px;
+
+    flex-shrink: 0;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    background: none;
+
+    color: var(--muted);
+
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+.icon-button:hover {
+    color: var(--text);
 }
