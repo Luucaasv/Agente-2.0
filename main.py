@@ -1,6 +1,9 @@
+import base64
+import binascii
 import json
 import os
 import re
+import secrets
 import sqlite3
 import threading
 import time
@@ -10,8 +13,8 @@ from pathlib import Path
 from typing import Literal
 
 import requests
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -26,7 +29,7 @@ OLLAMA_URL = os.getenv(
 
 DEFAULT_TEXT_MODEL = os.getenv(
     "DEFAULT_TEXT_MODEL",
-    "deepseek-r1:8b"
+    "gpt-oss:20b"
 )
 
 DEFAULT_VISION_MODEL = os.getenv(
@@ -56,7 +59,65 @@ VISION_NAME_HINTS = (
     "-vl", "vl:", "llava", "vision", "minicpm-v", "moondream"
 )
 
+def load_password() -> str:
+    """
+    Password for the app: APP_PASSWORD, or the first line of
+    password.txt next to main.py. Empty means no password.
+    """
+    password = os.getenv("APP_PASSWORD", "")
+
+    if not password:
+        try:
+            lines = PASSWORD_FILE.read_text(encoding="utf-8").splitlines()
+            password = lines[0].strip() if lines else ""
+        except FileNotFoundError:
+            pass
+
+    return password
+
+
+PASSWORD_FILE = Path(os.getenv("PASSWORD_FILE", BASE_DIR / "password.txt"))
+APP_PASSWORD = load_password()
+
+if not APP_PASSWORD:
+    print(
+        "WARNING: no password set. Anyone who can reach this server can "
+        "use it. Put a password in password.txt to turn on the login."
+    )
+
 app = FastAPI(title="Remote Ollama Chat")
+
+
+@app.middleware("http")
+async def require_password(request: Request, call_next):
+    """
+    HTTP Basic auth: the browser asks once for a password (any
+    username works) and then sends it with every request.
+    """
+    if not APP_PASSWORD:
+        return await call_next(request)
+
+    header = request.headers.get("authorization", "")
+    scheme, _, encoded = header.partition(" ")
+
+    if scheme.lower() == "basic":
+        try:
+            decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+        except (binascii.Error, UnicodeDecodeError):
+            decoded = ""
+
+        _, _, password = decoded.partition(":")
+
+        if secrets.compare_digest(
+            password.encode("utf-8"), APP_PASSWORD.encode("utf-8")
+        ):
+            return await call_next(request)
+
+    return Response(
+        "Password required.",
+        status_code=401,
+        headers={"WWW-Authenticate": 'Basic realm="Agente", charset="UTF-8"'},
+    )
 
 app.mount(
     "/static",

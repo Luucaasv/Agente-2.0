@@ -30,6 +30,12 @@ echo.
 echo  On this PC:     http://localhost:%PORT%
 if defined TSIP echo  On your phone:  http://%TSIP%:%PORT%
 echo.
+if exist "password.txt" (
+    echo  Login:          on ^(password from password.txt^)
+) else (
+    echo  Login:          OFF - create password.txt to require a password
+)
+echo.
 echo  Press Ctrl+C or close this window to stop.
 echo.
 

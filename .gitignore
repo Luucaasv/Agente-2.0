@@ -1,2 +1,6 @@
 presets.json
 chats.db
+password.txt
+__pycache__/
+*.pyc
+venv/
