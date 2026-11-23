@@ -155,6 +155,7 @@ class PresetIn(BaseModel):
     name: str
     role: str = ""
     context: str = ""
+    greeting: str = ""  # first assistant message of a new chat
 
 
 def ollama_request(method: str, endpoint: str, **kwargs):
@@ -283,10 +284,17 @@ def save_preset(payload: PresetIn):
     if len(name) > 60:
         raise HTTPException(status_code=400, detail="Name is too long (max 60).")
 
-    if len(payload.role) > 8000 or len(payload.context) > 20000:
+    if (
+        len(payload.role) > 8000
+        or len(payload.context) > 20000
+        or len(payload.greeting) > 4000
+    ):
         raise HTTPException(
             status_code=413,
-            detail="Role (max 8,000 chars) or context (max 20,000) is too long."
+            detail=(
+                "Role (max 8,000 chars), context (max 20,000) "
+                "or greeting (max 4,000) is too long."
+            )
         )
 
     with _presets_lock:
@@ -297,6 +305,7 @@ def save_preset(payload: PresetIn):
             "name": name,
             "role": payload.role.strip(),
             "context": payload.context.strip(),
+            "greeting": payload.greeting.strip(),
         }
 
         for index, existing in enumerate(presets):

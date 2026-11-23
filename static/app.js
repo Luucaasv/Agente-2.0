@@ -40,6 +40,7 @@ const roleList = document.getElementById("role-list");
 const roleName = document.getElementById("role-name");
 const roleText = document.getElementById("role-text");
 const roleContext = document.getElementById("role-context");
+const roleGreeting = document.getElementById("role-greeting");
 const roleError = document.getElementById("role-error");
 const roleDelete = document.getElementById("role-delete");
 const roleClose = document.getElementById("role-close");
@@ -60,7 +61,11 @@ let defaults = { text: "", vision: "" };
 // [{ role: "user" | "assistant", content: "...", images?: [base64] }]
 let conversation = [];
 
-let presets = []; // saved roles: { id, name, role, context }
+let presets = []; // saved roles: { id, name, role, context, greeting }
+
+// The role's greeting shown at the top of an empty chat:
+// { view, text }. It joins the conversation with the first message.
+let pendingGreeting = null;
 
 // The saved chat currently on screen (id is null until its first save).
 let session = { id: null, title: null };
@@ -565,6 +570,41 @@ function renderPresetOptions(selectedId = "") {
         presets.some(item => item.id === selectedId) ? selectedId : "";
 }
 
+/*
+    Show the selected role's greeting in an empty chat (or remove it
+    when the role changes). It is only added to the conversation once
+    the first message is sent, so switching roles first just swaps it.
+*/
+function showGreeting() {
+    if (conversation.length > 0 || generating) {
+        return;
+    }
+
+    pendingGreeting?.view.wrapper.remove();
+    pendingGreeting = null;
+
+    const role = currentRole();
+    const text = role?.greeting?.trim() ?? "";
+
+    if (!text) {
+        if (welcome && chat.children.length === 0) {
+            chat.appendChild(welcome);
+        }
+
+        return;
+    }
+
+    welcome?.remove();
+
+    const view = createAssistantMessage();
+
+    view.content.classList.remove("placeholder");
+    renderMarkdown(view.content, text);
+    setMeta(view, role.name);
+
+    pendingGreeting = { view, text };
+}
+
 function rememberRole() {
     try {
         localStorage.setItem(PRESET_STORAGE_KEY, presetSelect.value);
@@ -609,6 +649,8 @@ presetSelect.addEventListener("change", () => {
 
         addNote(role ? `Role: ${role.name}` : "Role removed");
     }
+
+    showGreeting();
 });
 
 
@@ -629,6 +671,7 @@ function loadRoleIntoForm() {
     roleName.value = role?.name ?? "";
     roleText.value = role?.role ?? "";
     roleContext.value = role?.context ?? "";
+    roleGreeting.value = role?.greeting ?? "";
 
     roleDelete.classList.toggle("hidden", !role);
 
@@ -687,7 +730,8 @@ roleForm.addEventListener("submit", async event => {
                 id: existing?.id ?? null,
                 name: roleName.value,
                 role: roleText.value,
-                context: roleContext.value
+                context: roleContext.value,
+                greeting: roleGreeting.value
             })
         });
 
@@ -714,6 +758,8 @@ roleForm.addEventListener("submit", async event => {
         if (changed && conversation.length > 0) {
             addNote(`Role: ${data.name}`);
         }
+
+        showGreeting();
 
         roleDialog.close();
 
@@ -746,6 +792,7 @@ roleDelete.addEventListener("click", async () => {
 
         renderPresetOptions(keep);
         rememberRole();
+        showGreeting();
 
         fillRoleList(NEW_ROLE);
 
@@ -785,6 +832,12 @@ async function sendMessage() {
     if (image) {
         userMessage.images = [image.base64];
     }
+
+    // Only the first message of a chat carries the greeting along.
+    const greeting =
+        conversation.length === 0 && pendingGreeting
+            ? { role: "assistant", content: pendingGreeting.text }
+            : null;
 
     addUserMessage(userMessage.content, image?.dataUrl, label);
 
@@ -870,7 +923,11 @@ async function sendMessage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 model,
-                messages: [...conversation, userMessage],
+                messages: [
+                    ...(greeting ? [greeting] : []),
+                    ...conversation,
+                    userMessage
+                ],
                 preset_id: role?.id ?? null
             }),
             signal: controller.signal
@@ -954,6 +1011,11 @@ async function sendMessage() {
     if (myChat === chatId) {
         if (hasAnswer) {
             // Remember this exchange so the next message has context.
+            if (greeting) {
+                conversation.push(greeting);
+                pendingGreeting = null;
+            }
+
             conversation.push(userMessage);
             conversation.push({ role: "assistant", content: answer });
 
@@ -1008,10 +1070,13 @@ function resetChat() {
     resetPromptHeight();
 
     clearImage();
+
+    pendingGreeting = null;
 }
 
 function newChat() {
     resetChat();
+    showGreeting();
 
     promptInput.focus();
 }
@@ -1343,5 +1408,5 @@ modelSelect.addEventListener("change", refreshModelState);
 
 Promise.all([loadModels(), loadPresets()]).then(() => {
     checkHealth();
-    restoreLastChat();
+    restoreLastChat().then(showGreeting);
 });

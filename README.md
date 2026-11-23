@@ -9,7 +9,9 @@ phone over [Tailscale](https://tailscale.com).
 - You can attach images. When you do, only vision models can be picked, and
   the app switches to one for you.
 - **Roles** are saved system prompts (a role plus optional context) that you
-  can switch between, even in the middle of a chat.
+  can switch between, even in the middle of a chat. A role can also have a
+  **greeting**: fixed text that appears as the model's first message in
+  every new chat with that role, and that the model sees as part of the chat.
 - **History** keeps your chats in SQLite. You can reopen, rename or delete
   them from any device.
 - An optional password protects the whole app.
