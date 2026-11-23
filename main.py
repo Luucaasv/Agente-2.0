@@ -29,7 +29,7 @@ OLLAMA_URL = os.getenv(
 
 DEFAULT_TEXT_MODEL = os.getenv(
     "DEFAULT_TEXT_MODEL",
-    "gpt-oss:20b"
+    "qwen3:14b"
 )
 
 DEFAULT_VISION_MODEL = os.getenv(
@@ -40,6 +40,11 @@ DEFAULT_VISION_MODEL = os.getenv(
 # Optional: context window size passed to Ollama (e.g. NUM_CTX=8192).
 # Longer chats need a bigger window; it also uses more VRAM.
 NUM_CTX = os.getenv("NUM_CTX")
+
+# Memory-map the model file? With the model fully on the GPU, the
+# mapping just keeps a ~model-sized copy in system RAM (about 8 GB for
+# qwen3:14b), so it is off by default. Set USE_MMAP=1 to turn it on.
+USE_MMAP = os.getenv("USE_MMAP", "0").lower() in ("1", "true", "yes")
 
 # Optional fallback role used when no saved role is selected.
 SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "")
@@ -118,6 +123,22 @@ async def require_password(request: Request, call_next):
         status_code=401,
         headers={"WWW-Authenticate": 'Basic realm="Agente", charset="UTF-8"'},
     )
+
+
+@app.middleware("http")
+async def always_revalidate(request: Request, call_next):
+    """
+    Make browsers check for a newer page/script before using a cached
+    one, so a plain refresh (or a phone) picks up updates. Unchanged
+    files still come back as a quick "304 Not Modified".
+    """
+    response = await call_next(request)
+
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+
+    return response
+
 
 app.mount(
     "/static",
@@ -658,8 +679,12 @@ def chat(payload: ChatRequest):
         "stream": True,
     }
 
+    options = {"use_mmap": USE_MMAP}
+
     if NUM_CTX:
-        request_data["options"] = {"num_ctx": int(NUM_CTX)}
+        options["num_ctx"] = int(NUM_CTX)
+
+    request_data["options"] = options
 
     try:
         upstream = requests.post(

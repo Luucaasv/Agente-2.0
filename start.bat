@@ -6,7 +6,7 @@ rem ===== SETTINGS (edit these) =====
 set "PORT=8000"
 set "OLLAMA_URL=http://127.0.0.1:11434"
 set "NUM_CTX=32768"
-set "DEFAULT_TEXT_MODEL=gpt-oss:20b"
+set "DEFAULT_TEXT_MODEL=qwen3:14b"
 set "DEFAULT_VISION_MODEL=qwen3-vl:30b-a3b-instruct-q4_K_M"
 rem =================================
 

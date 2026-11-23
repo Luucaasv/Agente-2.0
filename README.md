@@ -39,11 +39,15 @@ environment variables:
 | `PORT`                 | `8000`                               | Port the app listens on                       |
 | `OLLAMA_URL`           | `http://127.0.0.1:11434`             | Ollama server (can be another Tailscale PC)   |
 | `NUM_CTX`              | `32768`                              | Context window; bigger uses more VRAM         |
-| `DEFAULT_TEXT_MODEL`   | `gpt-oss:20b`                        | Model selected on first load                  |
+| `DEFAULT_TEXT_MODEL`   | `qwen3:14b`                          | Model selected on first load                  |
 | `DEFAULT_VISION_MODEL` | `qwen3-vl:30b-a3b-instruct-q4_K_M`   | Model the app switches to for images          |
 
 There are also a few optional variables: `SYSTEM_PROMPT` (used when no role
-is selected), `APP_PASSWORD`, `PASSWORD_FILE`, `PRESETS_FILE` and `CHATS_DB`.
+is selected), `APP_PASSWORD`, `PASSWORD_FILE`, `PRESETS_FILE`, `CHATS_DB` and
+`USE_MMAP`. `USE_MMAP` is off by default: when a model fits fully on the GPU,
+memory-mapping its file only keeps an extra copy in system RAM (about 8 GB for
+`qwen3:14b`). Turn it on (`USE_MMAP=1`) only if a model has to run partly on
+the CPU and loads too slowly without it.
 
 ## Password
 

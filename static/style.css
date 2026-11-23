@@ -16,6 +16,7 @@
     --assistant-message: #151a20;
 
     --danger: #ff7777;
+    --warning: #f0b45a;
 }
 
 
@@ -740,6 +741,25 @@ dialog::backdrop {
     font: inherit;
 
     resize: vertical;
+}
+
+/* "123 / 4,000" under each role field. */
+.char-count {
+    margin-top: -2px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+
+    text-align: right;
+}
+
+.char-count.near-limit {
+    color: var(--warning);
+}
+
+.char-count.cut-off {
+    color: var(--danger);
 }
 
 .role-error {

@@ -665,6 +665,64 @@ function editedRole() {
     return presets.find(item => item.id === roleList.value) ?? null;
 }
 
+/*
+    Character counters under each role field. The boxes have a
+    maxlength, and the browser silently cuts pasted text at that
+    limit, so a paste that didn't fit gets a warning instead.
+*/
+const countedFields = [roleName, roleText, roleContext, roleGreeting];
+const numberFormat = new Intl.NumberFormat();
+
+for (const field of countedFields) {
+    const counter = document.createElement("div");
+
+    counter.className = "char-count";
+    counter.setAttribute("aria-live", "polite");
+
+    field.after(counter);
+    field.counter = counter;
+    field.droppedByPaste = 0;
+
+    field.addEventListener("paste", event => {
+        const pasted = (event.clipboardData?.getData("text") ?? "")
+            .replace(/\r\n?/g, "\n");
+
+        const kept =
+            field.value.length -
+            (field.selectionEnd - field.selectionStart);
+
+        // Remembered here, shown by the input event that follows.
+        field.droppedByPaste = Math.max(
+            0, kept + pasted.length - field.maxLength
+        );
+    });
+
+    field.addEventListener("input", () => {
+        updateCounter(field, field.droppedByPaste);
+        field.droppedByPaste = 0;
+    });
+}
+
+function updateCounter(field, dropped = 0) {
+    const limit = field.maxLength;
+    const length = field.value.length;
+
+    let text =
+        `${numberFormat.format(length)} / ${numberFormat.format(limit)}`;
+
+    if (dropped > 0) {
+        text +=
+            ` · pasted text was cut off ` +
+            `(${numberFormat.format(dropped)} characters didn't fit)`;
+    }
+
+    field.counter.textContent = text;
+    field.counter.classList.toggle("cut-off", dropped > 0);
+    field.counter.classList.toggle(
+        "near-limit", dropped === 0 && length >= limit * 0.9
+    );
+}
+
 function loadRoleIntoForm() {
     const role = editedRole();
 
@@ -672,6 +730,10 @@ function loadRoleIntoForm() {
     roleText.value = role?.role ?? "";
     roleContext.value = role?.context ?? "";
     roleGreeting.value = role?.greeting ?? "";
+
+    for (const field of countedFields) {
+        updateCounter(field);
+    }
 
     roleDelete.classList.toggle("hidden", !role);
 
