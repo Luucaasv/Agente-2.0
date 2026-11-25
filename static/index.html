@@ -83,6 +83,20 @@
 
             </div>
 
+            <div class="model-container">
+
+                <label for="user">
+                    User
+                </label>
+
+                <select id="user">
+                    <option value="">
+                        No user
+                    </option>
+                </select>
+
+            </div>
+
             <div class="header-buttons">
 
                 <button
@@ -99,6 +113,14 @@
                     type="button"
                 >
                     Roles
+                </button>
+
+                <button
+                    id="edit-users"
+                    class="ghost-button"
+                    type="button"
+                >
+                    Users
                 </button>
 
                 <button
@@ -282,7 +304,17 @@
             autocomplete="off"
         >
 
-        <label for="role-text">Role</label>
+        <div class="field-head">
+            <label for="role-text">Role</label>
+            <button
+                class="link-button"
+                type="button"
+                data-template="role"
+                data-target="role-text"
+            >
+                Use template
+            </button>
+        </div>
         <textarea
             id="role-text"
             rows="5"
@@ -326,6 +358,87 @@
 
             <button
                 id="role-close"
+                class="ghost-button"
+                type="button"
+            >
+                Close
+            </button>
+
+            <button
+                class="send-button"
+                type="submit"
+            >
+                Save
+            </button>
+
+        </div>
+
+    </form>
+
+</dialog>
+
+<!-- USER EDITOR -->
+
+<dialog id="user-dialog">
+
+    <form id="user-form" class="role-form">
+
+        <h2>Users</h2>
+
+        <p class="dialog-hint">
+            Tell the model who it's talking to. Each device remembers
+            which user is picked. With the template, lines you leave
+            empty are skipped.
+        </p>
+
+        <label for="user-list">Edit</label>
+        <select id="user-list"></select>
+
+        <label for="user-name">Name</label>
+        <input
+            id="user-name"
+            type="text"
+            maxlength="60"
+            placeholder="e.g. Lucas"
+            autocomplete="off"
+        >
+
+        <div class="field-head">
+            <label for="user-about">
+                About me <span class="optional">(optional)</span>
+            </label>
+            <button
+                class="link-button"
+                type="button"
+                data-template="about"
+                data-target="user-about"
+            >
+                Use template
+            </button>
+        </div>
+        <textarea
+            id="user-about"
+            rows="6"
+            maxlength="4000"
+            placeholder="Who you are, what you like, how you want answers (language, length, tone)."
+        ></textarea>
+
+        <p id="user-error" class="role-error hidden"></p>
+
+        <div class="role-actions">
+
+            <button
+                id="user-delete"
+                class="danger-button hidden"
+                type="button"
+            >
+                Delete
+            </button>
+
+            <span class="spacer"></span>
+
+            <button
+                id="user-close"
                 class="ghost-button"
                 type="button"
             >

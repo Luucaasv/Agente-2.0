@@ -45,6 +45,21 @@ const roleError = document.getElementById("role-error");
 const roleDelete = document.getElementById("role-delete");
 const roleClose = document.getElementById("role-close");
 
+const userSelect = document.getElementById("user");
+const editUsersButton = document.getElementById("edit-users");
+
+const userDialog = document.getElementById("user-dialog");
+const userForm = document.getElementById("user-form");
+const userList = document.getElementById("user-list");
+const userName = document.getElementById("user-name");
+const userAbout = document.getElementById("user-about");
+const userError = document.getElementById("user-error");
+const userDelete = document.getElementById("user-delete");
+const userClose = document.getElementById("user-close");
+
+const USER_STORAGE_KEY = "agente.user";
+const NEW_USER = "__new_user__";
+
 const PRESET_STORAGE_KEY = "agente.preset";
 const NEW_ROLE = "__new__";
 
@@ -62,6 +77,7 @@ let defaults = { text: "", vision: "" };
 let conversation = [];
 
 let presets = []; // saved roles: { id, name, role, context, greeting }
+let users = []; // saved user profiles: { id, name, about }
 
 // The role's greeting shown at the top of an empty chat:
 // { view, text }. It joins the conversation with the first message.
@@ -670,7 +686,9 @@ function editedRole() {
     maxlength, and the browser silently cuts pasted text at that
     limit, so a paste that didn't fit gets a warning instead.
 */
-const countedFields = [roleName, roleText, roleContext, roleGreeting];
+const countedFields = [
+    roleName, roleText, roleContext, roleGreeting, userName, userAbout
+];
 const numberFormat = new Intl.NumberFormat();
 
 for (const field of countedFields) {
@@ -723,6 +741,59 @@ function updateCounter(field, dropped = 0) {
     );
 }
 
+/*
+    Fill-in-the-blanks templates. Lines left empty (just "Label:")
+    are skipped by the server, so only fill in what matters.
+*/
+const TEMPLATE_LABELS = {
+    role: [
+        "Who you are",
+        "Personality",
+        "How to answer (length, tone, format)",
+        "Always",
+        "Never"
+    ],
+
+    about: [
+        "Where I live",
+        "Language I want answers in",
+        "Work / studies",
+        "Hobbies and interests",
+        "How I like answers (length, tone)",
+        "Things to avoid",
+        "Other"
+    ]
+};
+
+// "Label: " lines, with the space after the colon ready for typing.
+const TEMPLATES = Object.fromEntries(
+    Object.entries(TEMPLATE_LABELS).map(
+        ([name, labels]) => [name, labels.map(l => `${l}: `).join("\n")]
+    )
+);
+
+for (const button of document.querySelectorAll("[data-template]")) {
+    button.addEventListener("click", () => {
+        const field = document.getElementById(button.dataset.target);
+
+        if (
+            field.value.trim() &&
+            !confirm("Replace what's in this box with the template?")
+        ) {
+            return;
+        }
+
+        field.value = TEMPLATES[button.dataset.template];
+        updateCounter(field);
+
+        // Put the cursor at the end of the first line, ready to type.
+        const end = field.value.indexOf("\n");
+
+        field.focus();
+        field.setSelectionRange(end, end);
+    });
+}
+
 function loadRoleIntoForm() {
     const role = editedRole();
 
@@ -731,7 +802,7 @@ function loadRoleIntoForm() {
     roleContext.value = role?.context ?? "";
     roleGreeting.value = role?.greeting ?? "";
 
-    for (const field of countedFields) {
+    for (const field of [roleName, roleText, roleContext, roleGreeting]) {
         updateCounter(field);
     }
 
@@ -865,6 +936,208 @@ roleDelete.addEventListener("click", async () => {
 
 
 /* -------------------------------------------
+   USERS
+   Who the model is talking to. The list is shared,
+   but each device remembers its own pick.
+------------------------------------------- */
+
+function currentUser() {
+    return users.find(item => item.id === userSelect.value) ?? null;
+}
+
+function renderUserOptions(selectedId = "") {
+    userSelect.innerHTML = "";
+
+    const none = document.createElement("option");
+
+    none.value = "";
+    none.textContent = "No user";
+
+    userSelect.appendChild(none);
+
+    for (const user of users) {
+        const option = document.createElement("option");
+
+        option.value = user.id;
+        option.textContent = user.name;
+
+        userSelect.appendChild(option);
+    }
+
+    userSelect.value =
+        users.some(item => item.id === selectedId) ? selectedId : "";
+}
+
+function rememberUser() {
+    try {
+        localStorage.setItem(USER_STORAGE_KEY, userSelect.value);
+    } catch {
+        /* storage unavailable */
+    }
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch("/api/users");
+
+        if (!response.ok) {
+            throw new Error("Failed to load users");
+        }
+
+        users = (await response.json()).users || [];
+
+        let saved = "";
+
+        try {
+            saved = localStorage.getItem(USER_STORAGE_KEY) || "";
+        } catch {
+            /* storage unavailable */
+        }
+
+        renderUserOptions(saved);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+userSelect.addEventListener("change", rememberUser);
+
+
+/* ---------- user editor ---------- */
+
+function showUserError(text = "") {
+    userError.textContent = text;
+    userError.classList.toggle("hidden", !text);
+}
+
+function editedUser() {
+    return users.find(item => item.id === userList.value) ?? null;
+}
+
+function loadUserIntoForm() {
+    const user = editedUser();
+
+    userName.value = user?.name ?? "";
+    userAbout.value = user?.about ?? "";
+
+    updateCounter(userName);
+    updateCounter(userAbout);
+
+    userDelete.classList.toggle("hidden", !user);
+
+    showUserError();
+}
+
+function fillUserList(selectedId) {
+    userList.innerHTML = "";
+
+    const create = document.createElement("option");
+
+    create.value = NEW_USER;
+    create.textContent = "+ New user";
+
+    userList.appendChild(create);
+
+    for (const user of users) {
+        const option = document.createElement("option");
+
+        option.value = user.id;
+        option.textContent = user.name;
+
+        userList.appendChild(option);
+    }
+
+    userList.value =
+        users.some(item => item.id === selectedId) ? selectedId : NEW_USER;
+
+    loadUserIntoForm();
+}
+
+editUsersButton.addEventListener("click", () => {
+    fillUserList(userSelect.value);
+
+    userDialog.showModal();
+});
+
+userClose.addEventListener("click", () => userDialog.close());
+
+userList.addEventListener("change", loadUserIntoForm);
+
+userForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    showUserError();
+
+    try {
+        const response = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: editedUser()?.id ?? null,
+                name: userName.value,
+                about: userAbout.value
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "Could not save the user.");
+        }
+
+        const index = users.findIndex(item => item.id === data.id);
+
+        if (index === -1) {
+            users.push(data);
+        } else {
+            users[index] = data;
+        }
+
+        // Switch this device to the user that was just saved.
+        renderUserOptions(data.id);
+        rememberUser();
+
+        userDialog.close();
+
+    } catch (error) {
+        showUserError(error.message);
+    }
+});
+
+userDelete.addEventListener("click", async () => {
+    const user = editedUser();
+
+    if (!user || !confirm(`Delete the user "${user.name}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/api/users/${encodeURIComponent(user.id)}`,
+            { method: "DELETE" }
+        );
+
+        if (!response.ok && response.status !== 404) {
+            throw new Error("Could not delete the user.");
+        }
+
+        users = users.filter(item => item.id !== user.id);
+
+        const keep = userSelect.value === user.id ? "" : userSelect.value;
+
+        renderUserOptions(keep);
+        rememberUser();
+
+        fillUserList(NEW_USER);
+
+    } catch (error) {
+        showUserError(error.message);
+    }
+});
+
+
+/* -------------------------------------------
    SEND MESSAGE
 ------------------------------------------- */
 
@@ -990,7 +1263,8 @@ async function sendMessage() {
                     ...conversation,
                     userMessage
                 ],
-                preset_id: role?.id ?? null
+                preset_id: role?.id ?? null,
+                user_id: currentUser()?.id ?? null
             }),
             signal: controller.signal
         });
@@ -1468,7 +1742,7 @@ modelSelect.addEventListener("change", refreshModelState);
    START APPLICATION
 ------------------------------------------- */
 
-Promise.all([loadModels(), loadPresets()]).then(() => {
+Promise.all([loadModels(), loadPresets(), loadUsers()]).then(() => {
     checkHealth();
     restoreLastChat().then(showGreeting);
 });

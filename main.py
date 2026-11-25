@@ -53,6 +53,10 @@ SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "")
 # same roles show up on every device that opens the app.
 PRESETS_FILE = Path(os.getenv("PRESETS_FILE", BASE_DIR / "presets.json"))
 
+# Saved user profiles (name + "about me"), so the model knows who it is
+# talking to. Each device picks one; the list is shared.
+USERS_FILE = Path(os.getenv("USERS_FILE", BASE_DIR / "users.json"))
+
 # Saved chats (SQLite). Also next to main.py, shared by every device.
 CHATS_DB = Path(os.getenv("CHATS_DB", BASE_DIR / "chats.db"))
 
@@ -157,6 +161,7 @@ class ChatRequest(BaseModel):
     model: str
     messages: list[ChatMessage]
     preset_id: str | None = None  # saved role to apply, if any
+    user_id: str | None = None  # saved user profile to apply, if any
 
 
 class ChatSave(BaseModel):
@@ -177,6 +182,12 @@ class PresetIn(BaseModel):
     role: str = ""
     context: str = ""
     greeting: str = ""  # first assistant message of a new chat
+
+
+class UserIn(BaseModel):
+    id: str | None = None  # omit to create, set to update
+    name: str
+    about: str = ""
 
 
 def ollama_request(method: str, endpoint: str, **kwargs):
@@ -253,29 +264,64 @@ def get_capabilities(name: str, digest: str) -> list[str]:
 _presets_lock = threading.Lock()
 
 
-def load_presets() -> list[dict]:
+def load_json_list(path: Path) -> list[dict]:
     try:
-        data = json.loads(PRESETS_FILE.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, ValueError):
         return []
 
     return data if isinstance(data, list) else []
 
 
-def save_presets(presets: list[dict]) -> None:
+def save_json_list(path: Path, items: list[dict]) -> None:
     # Write to a temp file first so a crash can't corrupt the real one.
-    temp = PRESETS_FILE.with_name(PRESETS_FILE.name + ".tmp")
+    temp = path.with_name(path.name + ".tmp")
 
     temp.write_text(
-        json.dumps(presets, indent=2, ensure_ascii=False),
+        json.dumps(items, indent=2, ensure_ascii=False),
         encoding="utf-8"
     )
 
-    os.replace(temp, PRESETS_FILE)
+    os.replace(temp, path)
+
+
+def load_presets() -> list[dict]:
+    return load_json_list(PRESETS_FILE)
+
+
+def save_presets(presets: list[dict]) -> None:
+    save_json_list(PRESETS_FILE, presets)
+
+
+# A "Label:" line with nothing after it, as left by an unfilled template.
+EMPTY_LABEL = re.compile(r"[^\W\d][^:\n]{0,59}:\s*")
+ANY_LABEL = re.compile(r"[^\W\d][^:\n]{0,59}:.*")
+
+
+def drop_empty_template_lines(text: str) -> str:
+    """
+    Remove template lines that were left blank ("Never: "), unless
+    the next line holds their content (a heading over a list).
+    """
+    lines = text.splitlines()
+    kept = []
+
+    for index, line in enumerate(lines):
+        if EMPTY_LABEL.fullmatch(line.strip()):
+            following = next(
+                (l.strip() for l in lines[index + 1:] if l.strip()), ""
+            )
+
+            if not following or ANY_LABEL.fullmatch(following):
+                continue
+
+        kept.append(line)
+
+    return "\n".join(kept).strip()
 
 
 def preset_system_text(preset: dict) -> str:
-    role = preset.get("role", "").strip()
+    role = drop_empty_template_lines(preset.get("role", ""))
     context = preset.get("context", "").strip()
 
     parts = [role]
@@ -351,6 +397,93 @@ def delete_preset(preset_id: str):
             raise HTTPException(status_code=404, detail="Role not found.")
 
         save_presets(kept)
+
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------
+# SAVED USERS
+# ---------------------------------------------------------------
+
+_users_lock = threading.Lock()
+
+
+def user_system_text(user: dict) -> str:
+    name = user.get("name", "").strip()
+    about = drop_empty_template_lines(user.get("about", ""))
+
+    # Spelled out so the model doesn't mistake these facts for its own.
+    text = (
+        f"## The user\n"
+        f"You are chatting with a person named {name}. When they say "
+        f"\"I\", \"me\" or \"my\", they mean {name}. Their name is {name}."
+    )
+
+    if about:
+        text += (
+            f"\nThe notes below describe {name} (the user), not you:\n"
+            f"{about}"
+        )
+
+    return text
+
+
+@app.get("/api/users")
+def list_users():
+    with _users_lock:
+        return {"users": load_json_list(USERS_FILE)}
+
+
+@app.post("/api/users")
+def save_user(payload: UserIn):
+    """
+    Create a user profile (no id) or update an existing one (with id).
+    """
+    name = payload.name.strip()
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Give the user a name.")
+
+    if len(name) > 60:
+        raise HTTPException(status_code=400, detail="Name is too long (max 60).")
+
+    if len(payload.about) > 4000:
+        raise HTTPException(
+            status_code=413,
+            detail="\"About me\" is too long (max 4,000 chars)."
+        )
+
+    with _users_lock:
+        users = load_json_list(USERS_FILE)
+
+        user = {
+            "id": payload.id or uuid.uuid4().hex[:8],
+            "name": name,
+            "about": payload.about.strip(),
+        }
+
+        for index, existing in enumerate(users):
+            if existing.get("id") == user["id"]:
+                users[index] = user
+                break
+        else:
+            users.append(user)
+
+        save_json_list(USERS_FILE, users)
+
+    return user
+
+
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: str):
+    with _users_lock:
+        users = load_json_list(USERS_FILE)
+        kept = [u for u in users if u.get("id") != user_id]
+
+        if len(kept) == len(users):
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        save_json_list(USERS_FILE, kept)
 
     return {"ok": True}
 
@@ -669,6 +802,27 @@ def chat(payload: ChatRequest):
 
     elif SYSTEM_PROMPT:
         system_text = SYSTEM_PROMPT
+
+    # Tell the model who it is talking to, after the role.
+    if payload.user_id:
+        with _users_lock:
+            user = next(
+                (
+                    u for u in load_json_list(USERS_FILE)
+                    if u.get("id") == payload.user_id
+                ),
+                None
+            )
+
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="That user no longer exists. Reload the page."
+            )
+
+        system_text = "\n\n".join(
+            part for part in (system_text, user_system_text(user)) if part
+        )
 
     if system_text and not any(m["role"] == "system" for m in messages):
         messages.insert(0, {"role": "system", "content": system_text})

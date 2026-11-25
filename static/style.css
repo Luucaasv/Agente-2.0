@@ -579,9 +579,18 @@ footer {
 .topbar-right {
     display: flex;
 
+    flex-wrap: wrap;
+
+    justify-content: flex-end;
+
     align-items: flex-end;
 
     gap: 10px;
+}
+
+/* Keep the title on one line; the controls wrap instead. */
+.topbar > div:first-child {
+    flex-shrink: 0;
 }
 
 .ghost-button {
@@ -655,7 +664,7 @@ footer {
 /* ROLES */
 
 .topbar-right .model-container {
-    min-width: 170px;
+    min-width: 150px;
 }
 
 .header-buttons {
@@ -741,6 +750,44 @@ dialog::backdrop {
     font: inherit;
 
     resize: vertical;
+}
+
+/* A field label with a small action ("Use template") on the right. */
+.field-head {
+    display: flex;
+
+    align-items: baseline;
+
+    justify-content: space-between;
+
+    gap: 10px;
+}
+
+.link-button {
+    padding: 0;
+
+    border: none;
+
+    background: none;
+
+    color: var(--accent);
+
+    font: inherit;
+    font-size: 12px;
+
+    cursor: pointer;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+.dialog-hint {
+    margin: -2px 0 4px;
+
+    color: var(--muted);
+
+    font-size: 13px;
 }
 
 /* "123 / 4,000" under each role field. */
